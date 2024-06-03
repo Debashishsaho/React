@@ -1,0 +1,98 @@
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background-color: #333;
+    color: white;
+}
+
+.navlinks {
+    display: flex;
+    gap: 2rem; /* Increased spacing between nav links */
+}
+
+.navlink {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem; /* Added padding for better box shadow effect */
+    transition: box-shadow 0.3s ease;
+}
+
+.navlink:hover {
+    color: #ddd;
+    box-shadow: 0 4px 8px rgba(206, 147, 216, 0.5); /* Box shadow effect */
+}
+
+.dropdown {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 3.5rem;
+    left: 0;
+    background-color: #444;
+    padding: 1rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.github-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid rgb(206, 147, 216); /* Border bottom color */
+    padding: 0 0.3rem; /* Reduced padding */
+    height: 1.5rem; /* Reduced height */
+    display: flex;
+    align-items: center; /* Align items to the center */
+}
+
+.github-text {
+    display: flex;
+    align-items: center;
+    color: rgb(206, 147, 216); /* Text color matching the border */
+    font-size: 1.3rem; /* Adjust the font size */
+}
+
+.github-icon {
+    margin-right: 0.3rem; /* Space between icon and text */
+    font-size: 1.3rem;
+    color: rgb(206, 147, 216); /* Icon color matching the text */
+}
+
+.menu-icon {
+    cursor: pointer;
+}
+
+@media (min-width: 961px) {
+    .dropdown {
+        display: none;
+    }
+
+    .menu-icon {
+        display: none;
+    }
+
+    .navlinks {
+        display: flex;
+    }
+
+    .github-button {
+        position: relative;
+        right: 0;
+    }
+}
+
+@media (max-width: 960px) {
+    .navlinks {
+        display: none;
+    }
+
+    .github-button {
+        position: absolute;
+        right: 1rem;
+    }
+}
