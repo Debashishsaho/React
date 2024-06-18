@@ -1,5 +1,4 @@
-// components/ChmodCal.js
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Checkbox,
@@ -9,12 +8,18 @@ import {
   Box,
   Typography,
   Container,
+  Tooltip,
+  Button,
 } from "@mui/material";
 import { setChecked, setNumberFieldValue, setTextFieldValue } from '../../actions/Chmod/chmodCalculator';
+import { isNumberValid, isTextValid, chmodNumberToString, chmodStringToCheckboxes, checkboxToChmodNumber } from '../../utils/validators/chmodValidator';
 
 const ChmodCal = () => {
   const dispatch = useDispatch();
   const { checked, numberFieldValue, textFieldValue } = useSelector(state => state.chmodCalculator);
+
+  const [numberError, setNumberError] = useState('');
+  const [textError, setTextError] = useState('');
 
   const handleChange = (event) => {
     const newChecked = {
@@ -25,28 +30,60 @@ const ChmodCal = () => {
     updatePermissions(newChecked);
   };
 
+  const handleNumberChange = (event) => {
+    const value = event.target.value;
+    if (isNumberValid(value)) {
+      if (value.length === 3) {
+        const newCheckboxState = chmodNumberToString(value);
+        dispatch(setChecked(chmodStringToCheckboxes(newCheckboxState)));
+        dispatch(setTextFieldValue(newCheckboxState));
+      }
+      setNumberError('');
+      dispatch(setNumberFieldValue(value));
+    } else {
+      setNumberError('Invalid number. Must be 0-7 and up to 3 digits.');
+    }
+  };
+
+  const handleTextChange = (event) => {
+    const value = event.target.value;
+    if (isTextValid(value)) {
+      if (value.length === 9) {
+        const newCheckboxState = chmodStringToCheckboxes(value);
+        dispatch(setChecked(newCheckboxState));
+        dispatch(setNumberFieldValue(checkboxToChmodNumber(newCheckboxState)));
+      }
+      setTextError('');
+      dispatch(setTextFieldValue(value));
+    } else {
+      setTextError('Invalid format. Must be rwx or - pattern.');
+    }
+  };
+
   const updatePermissions = (newChecked) => {
-    const { ownerRead, ownerWrite, ownerExecute, groupRead, groupWrite, groupExecute, othersRead, othersWrite, othersExecute } = newChecked;
-
-    const owner = calculatePermission(ownerRead, ownerWrite, ownerExecute);
-    const group = calculatePermission(groupRead, groupWrite, groupExecute);
-    const others = calculatePermission(othersRead, othersWrite, othersExecute);
-
-    const number = `${owner}${group}${others}`;
-    const text = `${createPermissionString(ownerRead, ownerWrite, ownerExecute)}${createPermissionString(groupRead, groupWrite, groupExecute)}${createPermissionString(othersRead, othersWrite, othersExecute)}`;
-
+    const number = checkboxToChmodNumber(newChecked);
+    const text = chmodNumberToString(number);
     dispatch(setNumberFieldValue(number));
     dispatch(setTextFieldValue(text));
   };
 
-  // Calculate permission value (4 for read, 2 for write, 1 for execute)
-  const calculatePermission = (read, write, execute) => {
-    return (read? 4 : 0) + (write? 2 : 0) + (execute? 1 : 0);
-  };
-
-  // Create permission string (r for read, w for write, x for execute, - for no permission)
-  const createPermissionString = (read, write, execute) => {
-    return `${read? 'r' : '-'}${write? 'w' : '-'}${execute? 'x' : '-'}`;
+  const clearFields = () => {
+    const defaultChecked = {
+      ownerRead: false,
+      ownerWrite: false,
+      ownerExecute: false,
+      groupRead: false,
+      groupWrite: false,
+      groupExecute: false,
+      othersRead: false,
+      othersWrite: false,
+      othersExecute: false,
+    };
+    dispatch(setChecked(defaultChecked));
+    dispatch(setNumberFieldValue('000'));
+    dispatch(setTextFieldValue('---------'));
+    setNumberError('');
+    setTextError('');
   };
 
   useEffect(() => {
@@ -58,43 +95,57 @@ const ChmodCal = () => {
       <Box display="flex" flexDirection="column" alignItems="center" p={2} gap={2}>
         <Typography variant="h6" align="center">Owner</Typography>
         <FormGroup className="ownerPermission" row>
-          <FormControlLabel control={<Checkbox name="ownerRead" checked={checked.ownerRead} onChange={handleChange} />} label="Read" />
-          <FormControlLabel control={<Checkbox name="ownerWrite" checked={checked.ownerWrite} onChange={handleChange} />} label="Write" />
-          <FormControlLabel control={<Checkbox name="ownerExecute" checked={checked.ownerExecute} onChange={handleChange} />} label="Execute" />
+          {['Read', 'Write', 'Execute'].map((perm, index) => (
+            <Tooltip key={perm} title={`Owner ${perm}`}>
+              <FormControlLabel control={<Checkbox name={`owner${perm}`} checked={checked[`owner${perm}`]} onChange={handleChange} />} label={perm} />
+            </Tooltip>
+          ))}
         </FormGroup>
 
         <Typography variant="h6" align="center">Group</Typography>
         <FormGroup className="groupPermission" row>
-          <FormControlLabel control={<Checkbox name="groupRead" checked={checked.groupRead} onChange={handleChange} />} label="Read" />
-          <FormControlLabel control={<Checkbox name="groupWrite" checked={checked.groupWrite} onChange={handleChange} />} label="Write" />
-          <FormControlLabel control={<Checkbox name="groupExecute" checked={checked.groupExecute} onChange={handleChange} />} label="Execute" />
+          {['Read', 'Write', 'Execute'].map((perm, index) => (
+            <Tooltip key={perm} title={`Group ${perm}`}>
+              <FormControlLabel control={<Checkbox name={`group${perm}`} checked={checked[`group${perm}`]} onChange={handleChange} />} label={perm} />
+            </Tooltip>
+          ))}
         </FormGroup>
 
         <Typography variant="h6" align="center">Others</Typography>
         <FormGroup className="otherPermission" row>
-          <FormControlLabel control={<Checkbox name="othersRead" checked={checked.othersRead} onChange={handleChange} />} label="Read" />
-          <FormControlLabel control={<Checkbox name="othersWrite" checked={checked.othersWrite} onChange={handleChange} />} label="Write" />
-          <FormControlLabel control={<Checkbox name="othersExecute" checked={checked.othersExecute} onChange={handleChange} />} label="Execute" />
+          {['Read', 'Write', 'Execute'].map((perm, index) => (
+            <Tooltip key={perm} title={`Others ${perm}`}>
+              <FormControlLabel control={<Checkbox name={`others${perm}`} checked={checked[`others${perm}`]} onChange={handleChange} />} label={perm} />
+            </Tooltip>
+          ))}
         </FormGroup>
 
         <TextField
           id="numberPermission"
           label="Numeric Permission"
           value={numberFieldValue}
+          onChange={handleNumberChange}
           variant="outlined"
           fullWidth
           margin="normal"
-          InputProps={{ readOnly: true }}
+          error={!!numberError}
+          helperText={numberError}
         />
         <TextField
           id="textPermission"
           label="Text Permission"
           value={textFieldValue}
+          onChange={handleTextChange}
           variant="outlined"
           fullWidth
           margin="normal"
-          InputProps={{ readOnly: true }}
+          error={!!textError}
+          helperText={textError}
         />
+
+        <Button variant="contained" color="primary" onClick={clearFields}>
+          Clear
+        </Button>
       </Box>
     </Container>
   );
